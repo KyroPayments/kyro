@@ -51,6 +51,29 @@ src/
 - `GET /api/transactions/:id/status` - Get transaction status
 - `POST /api/transactions/:id/refund` - Refund transaction
 
+## Database Configuration
+
+Kyro now uses Supabase (PostgreSQL) as its database engine. The configuration requires the following environment variables:
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+## Setting up Supabase
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Get your project URL and API keys from the dashboard
+3. Update your `.env` file with the Supabase configuration
+
+### Database Migrations
+
+After setting up your Supabase project, run the following SQL scripts to create the required tables:
+
+- `supabase/tables.sql` - Creates all required tables (wallets, payments, transactions)
+- `supabase/policies.sql` - Sets up Row Level Security (RLS) policies
+
 ## Environment Variables
 
 Create a `.env` file in the root directory with the following variables:
@@ -62,11 +85,9 @@ SUPPORTED_NETWORKS=ethereum,polygon,binance
 DEFAULT_NETWORK=ethereum
 KYRO_SECRET_KEY=sk_test_your_secret_key
 KYRO_PUBLIC_KEY=pk_test_your_public_key
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=kyro
-DB_USER=kyro_user
-DB_PASSWORD=kyro_password
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 LOG_LEVEL=info
 JWT_SECRET=your_jwt_secret
 ENCRYPTION_KEY=your_encryption_key
@@ -82,12 +103,24 @@ npm install
 
 2. Create a `.env` file with your environment variables
 
-3. Start the development server:
+3. Set up your Supabase database using the SQL scripts in the `supabase/` directory
+
+4. Start the development server:
 ```bash
 npm run dev
 ```
 
-4. The server will be running at `http://localhost:3000`
+5. The server will be running at `http://localhost:3000`
+
+## Running Migrations
+
+To run the database migrations (note: this is currently a manual process via the Supabase dashboard):
+
+```bash
+node migrate.js
+```
+
+Note: This script serves as a guide. For actual SQL execution, run the scripts in your Supabase dashboard or using the Supabase CLI.
 
 ## Testing
 

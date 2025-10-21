@@ -16,11 +16,11 @@ const config = {
     publicKey: process.env.KYRO_PUBLIC_KEY || 'pk_test_kyro_default_public_key'
   },
   database: {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    name: process.env.DB_NAME || 'kyro',
-    user: process.env.DB_USER || 'kyro_user',
-    password: process.env.DB_PASSWORD || 'kyro_password'
+    supabase: {
+      url: process.env.SUPABASE_URL || 'https://your-project.supabase.co',
+      key: process.env.SUPABASE_ANON_KEY || 'your-anon-key',
+      service_role_key: process.env.SUPABASE_SERVICE_ROLE_KEY || 'your-service-role-key'
+    }
   },
   logging: {
     level: process.env.LOG_LEVEL || 'info'

@@ -5,29 +5,23 @@ const { generateWalletAddress } = require('../utils/cryptoUtils');
 class WalletService {
   async createWallet(walletData) {
     try {
-      const wallet = new Wallet({
-        id: generateId('wallet'),
+      const walletId = generateId('wallet');
+      const now = new Date();
+      
+      const wallet = await Wallet.create({
+        id: walletId,
         ...walletData,
         balance: walletData.balance || 0,
-        addresses: [],
-        created_at: new Date(),
-        updated_at: new Date()
+        created_at: now,
+        updated_at: now
       });
       
       // Add initial address if crypto type is specified
-      if (walletData.cryptoType) {
-        const address = generateWalletAddress(walletData.cryptoType);
-        wallet.addresses.push({
-          type: walletData.cryptoType,
-          address: address,
-          created_at: new Date()
-        });
+      if (walletData.crypto_type) {
+        const address = generateWalletAddress(walletData.crypto_type);
+        await wallet.addAddress(walletData.crypto_type, address);
       }
       
-      // Save to database (in a real implementation)
-      // await wallet.save();
-      
-      // In this skeleton, we'll simulate the save
       return wallet;
     } catch (error) {
       throw new Error(`Error creating wallet: ${error.message}`);
@@ -36,21 +30,7 @@ class WalletService {
 
   async getWalletById(id) {
     try {
-      // Simulate database query
-      // return await Wallet.findById(id);
-      
-      // In this skeleton, we'll return a sample wallet if exists
-      return id.startsWith('wallet_') ? {
-        id,
-        user_id: 'user_123',
-        balance: 10.5,
-        crypto_type: 'ETH',
-        addresses: [
-          { type: 'ETH', address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' }
-        ],
-        created_at: new Date(),
-        updated_at: new Date()
-      } : null;
+      return await Wallet.findById(id);
     } catch (error) {
       throw new Error(`Error retrieving wallet: ${error.message}`);
     }
@@ -82,15 +62,17 @@ class WalletService {
       // In a real implementation, this would interact with blockchain
       // to verify the deposit transaction
       
-      // Update balance
-      wallet.balance += parseFloat(amount);
-      wallet.updated_at = new Date();
+      // Update balance in database
+      const newBalance = parseFloat(wallet.balance) + parseFloat(amount);
+      const updatedWallet = await Wallet.update(walletId, {
+        balance: newBalance
+      });
       
       return {
         success: true,
         wallet_id: walletId,
         amount: parseFloat(amount),
-        new_balance: wallet.balance,
+        new_balance: newBalance,
         crypto_type: cryptoType
       };
     } catch (error) {
@@ -108,23 +90,26 @@ class WalletService {
         return { success: false, error: 'Wallet not found' };
       }
       
-      if (wallet.balance < parseFloat(amount)) {
+      const requestedAmount = parseFloat(amount);
+      if (parseFloat(wallet.balance) < requestedAmount) {
         return { success: false, error: 'Insufficient balance' };
       }
       
       // In a real implementation, this would create and broadcast
       // a blockchain transaction to transfer funds
       
-      // Update balance
-      wallet.balance -= parseFloat(amount);
-      wallet.updated_at = new Date();
+      // Update balance in database
+      const newBalance = parseFloat(wallet.balance) - requestedAmount;
+      const updatedWallet = await Wallet.update(walletId, {
+        balance: newBalance
+      });
       
       return {
         success: true,
         wallet_id: walletId,
-        amount: parseFloat(amount),
+        amount: requestedAmount,
         to_address: toAddress,
-        new_balance: wallet.balance,
+        new_balance: newBalance,
         crypto_type: cryptoType
       };
     } catch (error) {
@@ -137,26 +122,12 @@ class WalletService {
 
   async listWallets(page, limit, userId) {
     try {
-      // Simulate database query
-      // const query = userId ? { user_id: userId } : {};
-      // 
-      // const total = await Wallet.countDocuments(query);
-      // const wallets = await Wallet.find(query)
-      //   .limit(limit * 1)
-      //   .skip((page - 1) * limit)
-      //   .sort({ created_at: -1 });
+      const filters = {};
+      if (userId) {
+        filters.user_id = userId;
+      }
       
-      // In this skeleton, we'll return sample data
-      return {
-        wallets: [
-          { id: 'wallet_1', user_id: 'user_123', balance: 10.5, crypto_type: 'ETH', created_at: new Date() },
-          { id: 'wallet_2', user_id: 'user_123', balance: 5.2, crypto_type: 'BTC', created_at: new Date() }
-        ],
-        total: 2,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(2 / limit)
-      };
+      return await Wallet.findAll(page, limit, filters);
     } catch (error) {
       throw new Error(`Error listing wallets: ${error.message}`);
     }
@@ -169,14 +140,8 @@ class WalletService {
       
       const newAddress = generateWalletAddress(cryptoType || wallet.crypto_type);
       
-      // Add address to wallet
-      wallet.addresses.push({
-        type: cryptoType || wallet.crypto_type,
-        address: newAddress,
-        created_at: new Date()
-      });
-      
-      wallet.updated_at = new Date();
+      // Add address to wallet in the database
+      await wallet.addAddress(cryptoType || wallet.crypto_type, newAddress);
       
       return newAddress;
     } catch (error) {
