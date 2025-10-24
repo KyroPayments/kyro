@@ -1,92 +1,111 @@
--- Supabase Tables for Kyro Crypto Payment Platform
-
--- Extension for automatic timestamp updates
-CREATE EXTENSION IF NOT EXISTS moddatetime;
-
--- Wallets table
-CREATE TABLE IF NOT EXISTS wallets (
+-- Users table (created first to support foreign keys)
+CREATE TABLE IF NOT EXISTS users (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    balance DECIMAL(20, 8) DEFAULT 0.00000000,
-    crypto_type TEXT NOT NULL,
-    is_active BOOLEAN DEFAULT true,
-    metadata JSONB DEFAULT '{}',
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    password_hash TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Indexes for wallets
-CREATE INDEX IF NOT EXISTS wallets_user_id_idx ON wallets(user_id);
-CREATE INDEX IF NOT EXISTS wallets_crypto_type_idx ON wallets(crypto_type);
-
--- Wallet addresses table
-CREATE TABLE IF NOT EXISTS wallet_addresses (
+-- API Keys table
+CREATE TABLE IF NOT EXISTS api_keys (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    wallet_id UUID REFERENCES wallets(id) ON DELETE CASCADE,
-    type TEXT NOT NULL,
-    address TEXT NOT NULL,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    key_hash TEXT NOT NULL,
+    permissions JSONB DEFAULT '["read", "write"]', -- JSON array of permissions
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Index for wallet addresses
-CREATE INDEX IF NOT EXISTS wallet_addresses_wallet_id_idx ON wallet_addresses(wallet_id);
+-- Original Kyro tables (from previous setup)
+-- Wallets table
+CREATE TABLE IF NOT EXISTS wallets (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES users(id), -- Link to users table
+    address VARCHAR(255) UNIQUE NOT NULL,
+    crypto_type VARCHAR(50) NOT NULL,
+    balance DECIMAL(30, 18) DEFAULT 0,
+    network VARCHAR(50) DEFAULT 'ethereum',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
 -- Payments table
 CREATE TABLE IF NOT EXISTS payments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    amount DECIMAL(20, 8) NOT NULL,
-    currency TEXT NOT NULL,
     wallet_id UUID REFERENCES wallets(id),
-    merchant_id TEXT NOT NULL,
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'completed', 'failed', 'cancelled', 'refunded')),
-    transaction_id TEXT,
-    metadata JSONB DEFAULT '{}',
+    user_id UUID REFERENCES users(id), -- Link to users table
+    amount DECIMAL(20, 8) NOT NULL,
+    currency VARCHAR(10) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    payment_address VARCHAR(255),
+    expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
--- Indexes for payments
-CREATE INDEX IF NOT EXISTS payments_wallet_id_idx ON payments(wallet_id);
-CREATE INDEX IF NOT EXISTS payments_merchant_id_idx ON payments(merchant_id);
-CREATE INDEX IF NOT EXISTS payments_status_idx ON payments(status);
 
 -- Transactions table
 CREATE TABLE IF NOT EXISTS transactions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    from_wallet UUID REFERENCES wallets(id),
-    to_wallet UUID REFERENCES wallets(id),
+    user_id UUID REFERENCES users(id), -- Link to users table
+    wallet_id UUID REFERENCES wallets(id),
+    payment_id UUID REFERENCES payments(id),
     amount DECIMAL(20, 8) NOT NULL,
-    currency TEXT NOT NULL,
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded')),
-    fee DECIMAL(20, 8) DEFAULT 0.00000000,
-    tx_hash TEXT,
-    block_number BIGINT,
-    confirmations INTEGER DEFAULT 0,
-    type TEXT DEFAULT 'transfer' CHECK (type IN ('transfer', 'payment', 'refund', 'deposit', 'withdrawal')),
-    metadata JSONB DEFAULT '{}',
+    currency VARCHAR(10) NOT NULL,
+    type VARCHAR(20) NOT NULL, -- 'inbound', 'outbound', 'payment', etc.
+    status VARCHAR(20) DEFAULT 'pending',
+    transaction_hash VARCHAR(255),
+    block_number INTEGER,
+    from_address VARCHAR(255),
+    to_address VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Indexes for transactions
-CREATE INDEX IF NOT EXISTS transactions_from_wallet_idx ON transactions(from_wallet);
-CREATE INDEX IF NOT EXISTS transactions_to_wallet_idx ON transactions(to_wallet);
-CREATE INDEX IF NOT EXISTS transactions_status_idx ON transactions(status);
-CREATE INDEX IF NOT EXISTS transactions_tx_hash_idx ON transactions(tx_hash);
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys(active);
+CREATE INDEX IF NOT EXISTS idx_wallets_user_id ON wallets(user_id);
+CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
+CREATE INDEX IF NOT EXISTS idx_payments_wallet_id ON payments(wallet_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON transactions(wallet_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_payment_id ON transactions(payment_id);
 
--- Triggers to update updated_at timestamp for all tables
+-- Update updated_at trigger
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_users_updated_at 
+    BEFORE UPDATE ON users 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_api_keys_updated_at 
+    BEFORE UPDATE ON api_keys 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_wallets_updated_at 
     BEFORE UPDATE ON wallets 
     FOR EACH ROW 
-    EXECUTE FUNCTION moddatetime(updated_at);
+    EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_payments_updated_at 
     BEFORE UPDATE ON payments 
     FOR EACH ROW 
-    EXECUTE FUNCTION moddatetime(updated_at);
+    EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_transactions_updated_at 
     BEFORE UPDATE ON transactions 
     FOR EACH ROW 
-    EXECUTE FUNCTION moddatetime(updated_at);
+    EXECUTE FUNCTION update_updated_at_column();

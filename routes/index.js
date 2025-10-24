@@ -6,6 +6,10 @@ const paymentRoutes = require('./paymentRoutes');
 const walletRoutes = require('./walletRoutes');
 const transactionRoutes = require('./transactionRoutes');
 const webhookRoutes = require('./webhookRoutes');
+const authRoutes = require('./authRoutes');
+
+// Authentication routes
+router.use('/auth', authRoutes);
 
 // Payment routes
 router.use('/payments', paymentRoutes);

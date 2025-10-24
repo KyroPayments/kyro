@@ -1,26 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const walletController = require('../controllers/walletController');
+const { authenticateEither } = require('../middleware/authMiddleware');
 
 // Create a new wallet
-router.post('/', walletController.createWallet);
+router.post('/', authenticateEither, walletController.createWallet);
 
 // Get wallet by ID
-router.get('/:id', walletController.getWallet);
+router.get('/:id', authenticateEither, walletController.getWallet);
 
 // Get wallet balance
-router.get('/:id/balance', walletController.getBalance);
+router.get('/:id/balance', authenticateEither, walletController.getBalance);
 
 // Add funds to wallet
-router.post('/:id/deposit', walletController.depositFunds);
+router.post('/:id/deposit', authenticateEither, walletController.depositFunds);
 
 // Withdraw funds from wallet
-router.post('/:id/withdraw', walletController.withdrawFunds);
+router.post('/:id/withdraw', authenticateEither, walletController.withdrawFunds);
 
 // List wallets
-router.get('/', walletController.listWallets);
+router.get('/', authenticateEither, walletController.listWallets);
 
 // Generate new address
-router.post('/:id/generate-address', walletController.generateAddress);
+router.post('/:id/generate-address', authenticateEither, walletController.generateAddress);
 
 module.exports = router;
