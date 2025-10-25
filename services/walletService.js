@@ -1,26 +1,38 @@
 const Wallet = require('../models/Wallet');
+const NetworkType = require('../models/NetworkType');
 const { generateId } = require('../utils/idGenerator');
 const { generateWalletAddress } = require('../utils/cryptoUtils');
 
 class WalletService {
+  async getNetworkTypeById(id) {
+    try {
+      return await NetworkType.findById(id);
+    } catch (error) {
+      throw new Error(`Error retrieving network type: ${error.message}`);
+    }
+  }
+
   async createWallet(walletData) {
     try {
-      const walletId = generateId('wallet');
+      //const walletId = generateId('wallet');
       const now = new Date();
       
+      // Validate that address and name are provided by the user
+      if (!walletData.address) {
+        throw new Error('Wallet address must be provided by the user');
+      }
+      
+      if (!walletData.name) {
+        throw new Error('Wallet name must be provided by the user');
+      }
+      
       const wallet = await Wallet.create({
-        id: walletId,
+        //id: walletId,
         ...walletData,
         balance: walletData.balance || 0,
         created_at: now,
         updated_at: now
       });
-      
-      // Add initial address if crypto type is specified
-      if (walletData.crypto_type) {
-        const address = generateWalletAddress(walletData.crypto_type);
-        await wallet.addAddress(walletData.crypto_type, address);
-      }
       
       return wallet;
     } catch (error) {
@@ -41,10 +53,13 @@ class WalletService {
       const wallet = await this.getWalletById(id);
       if (!wallet) return null;
       
+      // Get the network type to return with the balance
+      const networkType = await this.getNetworkTypeById(wallet.network_type_id);
+      
       return {
         wallet_id: id,
         balance: wallet.balance,
-        crypto_type: wallet.crypto_type,
+        network_type: networkType ? networkType.name : null,
         updated_at: new Date()
       };
     } catch (error) {
@@ -52,7 +67,7 @@ class WalletService {
     }
   }
 
-  async depositFunds(walletId, amount, cryptoType) {
+  async depositFunds(walletId, amount, network_type) {
     try {
       const wallet = await this.getWalletById(walletId);
       if (!wallet) {
@@ -73,7 +88,7 @@ class WalletService {
         wallet_id: walletId,
         amount: parseFloat(amount),
         new_balance: newBalance,
-        crypto_type: cryptoType
+        network_type: network_type
       };
     } catch (error) {
       return {
@@ -83,7 +98,7 @@ class WalletService {
     }
   }
 
-  async withdrawFunds(walletId, amount, toAddress, cryptoType) {
+  async withdrawFunds(walletId, amount, toAddress, network_type) {
     try {
       const wallet = await this.getWalletById(walletId);
       if (!wallet) {
@@ -110,7 +125,7 @@ class WalletService {
         amount: requestedAmount,
         to_address: toAddress,
         new_balance: newBalance,
-        crypto_type: cryptoType
+        network_type: network_type
       };
     } catch (error) {
       return {
@@ -133,21 +148,7 @@ class WalletService {
     }
   }
 
-  async generateAddress(walletId, cryptoType) {
-    try {
-      const wallet = await this.getWalletById(walletId);
-      if (!wallet) return null;
-      
-      const newAddress = generateWalletAddress(cryptoType || wallet.crypto_type);
-      
-      // Add address to wallet in the database
-      await wallet.addAddress(cryptoType || wallet.crypto_type, newAddress);
-      
-      return newAddress;
-    } catch (error) {
-      throw new Error(`Error generating address: ${error.message}`);
-    }
-  }
+
 }
 
 module.exports = new WalletService();

@@ -21,7 +21,6 @@ router.post('/:id/withdraw', authenticateEither, walletController.withdrawFunds)
 // List wallets
 router.get('/', authenticateEither, walletController.listWallets);
 
-// Generate new address
-router.post('/:id/generate-address', authenticateEither, walletController.generateAddress);
+
 
 module.exports = router;

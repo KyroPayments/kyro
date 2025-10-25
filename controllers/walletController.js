@@ -9,7 +9,9 @@ const createWallet = handleAsyncError(async (req, res) => {
     return res.status(400).json({ error: error.details[0].message });
   }
 
-  const wallet = await walletService.createWallet(value);
+  // Use user ID from authentication instead of from request body
+  const walletData = { ...value, user_id: req.userId };
+  const wallet = await walletService.createWallet(walletData);
   res.status(201).json({ success: true, wallet });
 });
 
@@ -33,8 +35,8 @@ const getBalance = handleAsyncError(async (req, res) => {
 
 // Add funds to wallet
 const depositFunds = handleAsyncError(async (req, res) => {
-  const { amount, cryptoType } = req.body;
-  const result = await walletService.depositFunds(req.params.id, amount, cryptoType);
+  const { amount, network_type } = req.body;
+  const result = await walletService.depositFunds(req.params.id, amount, network_type);
   if (!result.success) {
     return res.status(400).json({ error: result.error });
   }
@@ -43,8 +45,8 @@ const depositFunds = handleAsyncError(async (req, res) => {
 
 // Withdraw funds from wallet
 const withdrawFunds = handleAsyncError(async (req, res) => {
-  const { amount, toAddress, cryptoType } = req.body;
-  const result = await walletService.withdrawFunds(req.params.id, amount, toAddress, cryptoType);
+  const { amount, toAddress, network_type } = req.body;
+  const result = await walletService.withdrawFunds(req.params.id, amount, toAddress, network_type);
   if (!result.success) {
     return res.status(400).json({ error: result.error });
   }
@@ -58,15 +60,7 @@ const listWallets = handleAsyncError(async (req, res) => {
   res.status(200).json({ success: true, ...result });
 });
 
-// Generate new address
-const generateAddress = handleAsyncError(async (req, res) => {
-  const { cryptoType } = req.body;
-  const address = await walletService.generateAddress(req.params.id, cryptoType);
-  if (!address) {
-    return res.status(404).json({ error: 'Wallet not found' });
-  }
-  res.status(200).json({ success: true, address });
-});
+
 
 module.exports = {
   createWallet,
@@ -74,6 +68,5 @@ module.exports = {
   getBalance,
   depositFunds,
   withdrawFunds,
-  listWallets,
-  generateAddress
+  listWallets
 };

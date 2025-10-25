@@ -7,6 +7,7 @@ const walletRoutes = require('./walletRoutes');
 const transactionRoutes = require('./transactionRoutes');
 const webhookRoutes = require('./webhookRoutes');
 const authRoutes = require('./authRoutes');
+const networkTypeRoutes = require('./networkTypeRoutes');
 
 // Authentication routes
 router.use('/auth', authRoutes);
@@ -22,6 +23,9 @@ router.use('/transactions', transactionRoutes);
 
 // Webhook routes
 router.use('/webhooks', webhookRoutes);
+
+// Network type routes
+router.use('/network-types', networkTypeRoutes);
 
 // API info endpoint
 router.get('/', (req, res) => {

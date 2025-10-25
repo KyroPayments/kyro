@@ -1,10 +1,15 @@
 -- Supabase Row Level Security (RLS) Policies for Kyro Crypto Payment Platform
 
 -- Enable RLS for all tables
+ALTER TABLE network_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_addresses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for network_types table (public read access)
+CREATE POLICY "Everyone can read network types" ON network_types
+    FOR SELECT TO authenticated, anon
+    USING (true);
 
 -- Create policies for wallets table
 CREATE POLICY "Users can view their own wallets" ON wallets
@@ -18,15 +23,6 @@ CREATE POLICY "Users can create wallets" ON wallets
 CREATE POLICY "Users can update their own wallets" ON wallets
     FOR UPDATE TO authenticated
     USING (auth.uid()::text = user_id);
-
--- Create policies for wallet_addresses table
-CREATE POLICY "Users can view addresses for their wallets" ON wallet_addresses
-    FOR SELECT TO authenticated
-    USING (wallet_id IN (SELECT id FROM wallets WHERE auth.uid()::text = user_id));
-
-CREATE POLICY "Users can create addresses for their wallets" ON wallet_addresses
-    FOR INSERT TO authenticated
-    WITH CHECK (wallet_id IN (SELECT id FROM wallets WHERE auth.uid()::text = user_id));
 
 -- Create policies for payments table
 CREATE POLICY "Users can view their own payments" ON payments

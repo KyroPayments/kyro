@@ -1,3 +1,12 @@
+-- Network Types table (created first to support foreign keys)
+CREATE TABLE IF NOT EXISTS network_types (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Users table (created first to support foreign keys)
 CREATE TABLE IF NOT EXISTS users (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -25,10 +34,10 @@ CREATE TABLE IF NOT EXISTS api_keys (
 CREATE TABLE IF NOT EXISTS wallets (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES users(id), -- Link to users table
-    address VARCHAR(255) UNIQUE NOT NULL,
-    crypto_type VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL, -- User-defined name for the wallet
+    address VARCHAR(255) UNIQUE NOT NULL, -- User-provided wallet address
+    network_type_id UUID NOT NULL REFERENCES network_types(id),
     balance DECIMAL(30, 18) DEFAULT 0,
-    network VARCHAR(50) DEFAULT 'ethereum',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -70,6 +79,7 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id);
 CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys(active);
 CREATE INDEX IF NOT EXISTS idx_wallets_user_id ON wallets(user_id);
+CREATE INDEX IF NOT EXISTS idx_wallets_network_type_id ON wallets(network_type_id);
 CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_wallet_id ON payments(wallet_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
@@ -109,3 +119,6 @@ CREATE TRIGGER update_transactions_updated_at
     BEFORE UPDATE ON transactions 
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
+
+-- Insert default network type
+INSERT INTO network_types (name, description) VALUES ('EVM', 'Ethereum Virtual Machine compatible networks') ON CONFLICT (name) DO NOTHING;

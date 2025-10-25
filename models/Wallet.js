@@ -4,8 +4,10 @@ class Wallet {
   constructor(data) {
     this.id = data.id;
     this.user_id = data.user_id;
+    this.name = data.name; // User-defined name for the wallet
+    this.address = data.address; // User-provided address
+    this.network_type_id = data.network_type_id;
     this.balance = data.balance || 0;
-    this.crypto_type = data.crypto_type;
     this.is_active = data.is_active !== undefined ? data.is_active : true;
     this.metadata = data.metadata || {};
     this.created_at = data.created_at;
@@ -14,17 +16,19 @@ class Wallet {
 
   // Static method to create a new wallet in the database
   static async create(data) {
-    const { id, user_id, balance, crypto_type, is_active, metadata } = data;
+    const { id, user_id, name, address, balance, network_type_id, is_active, metadata } = data;
     
     const { data: wallet, error } = await supabase
       .from('wallets')
       .insert([{
-        id,
+        //id,
         user_id,
+        name, // User-defined name for the wallet
+        address, // User-provided address
         balance: balance || 0,
-        crypto_type,
-        is_active: is_active !== undefined ? is_active : true,
-        metadata: metadata || {}
+        network_type_id,
+        // is_active: is_active !== undefined ? is_active : true,
+        // metadata: metadata || {}
       }])
       .select()
       .single();
@@ -92,8 +96,8 @@ class Wallet {
       query = query.eq('user_id', filters.user_id);
     }
     
-    if (filters.crypto_type) {
-      query = query.eq('crypto_type', filters.crypto_type);
+    if (filters.network_type_id) {
+      query = query.eq('network_type_id', filters.network_type_id);
     }
     
     if (filters.is_active !== undefined) {
@@ -117,39 +121,7 @@ class Wallet {
     };
   }
 
-  // Method to add an address to the wallet
-  async addAddress(type, address) {
-    const { data, error } = await supabase
-      .from('wallet_addresses')
-      .insert([{
-        wallet_id: this.id,
-        type,
-        address
-      }])
-      .select()
-      .single();
 
-    if (error) {
-      throw new Error(`Error adding address to wallet: ${error.message}`);
-    }
-
-    return data;
-  }
-
-  // Method to get all addresses for this wallet
-  async getAddresses() {
-    const { data, error } = await supabase
-      .from('wallet_addresses')
-      .select('*')
-      .eq('wallet_id', this.id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw new Error(`Error retrieving wallet addresses: ${error.message}`);
-    }
-
-    return data;
-  }
 }
 
 module.exports = Wallet;
