@@ -8,6 +8,8 @@ const transactionRoutes = require('./transactionRoutes');
 const webhookRoutes = require('./webhookRoutes');
 const authRoutes = require('./authRoutes');
 const networkTypeRoutes = require('./networkTypeRoutes');
+const blockchainNetworkRoutes = require('./blockchainNetworkRoutes');
+const cryptoTokenRoutes = require('./cryptoTokenRoutes');
 
 // Authentication routes
 router.use('/auth', authRoutes);
@@ -26,6 +28,12 @@ router.use('/webhooks', webhookRoutes);
 
 // Network type routes
 router.use('/network-types', networkTypeRoutes);
+
+// Blockchain network routes
+router.use('/blockchain-networks', blockchainNetworkRoutes);
+
+// Crypto token routes
+router.use('/crypto-tokens', cryptoTokenRoutes);
 
 // API info endpoint
 router.get('/', (req, res) => {

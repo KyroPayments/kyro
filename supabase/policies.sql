@@ -2,12 +2,24 @@
 
 -- Enable RLS for all tables
 ALTER TABLE network_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE blockchain_networks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE crypto_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for network_types table (public read access)
 CREATE POLICY "Everyone can read network types" ON network_types
+    FOR SELECT TO authenticated, anon
+    USING (true);
+
+-- Create policies for blockchain_networks table (public read access)
+CREATE POLICY "Everyone can read blockchain networks" ON blockchain_networks
+    FOR SELECT TO authenticated, anon
+    USING (true);
+
+-- Create policies for crypto_tokens table (public read access)
+CREATE POLICY "Everyone can read crypto tokens" ON crypto_tokens
     FOR SELECT TO authenticated, anon
     USING (true);
 

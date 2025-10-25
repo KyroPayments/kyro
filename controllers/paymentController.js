@@ -4,12 +4,20 @@ const { handleAsyncError } = require('../utils/errorHandler');
 
 // Create a new payment
 const createPayment = handleAsyncError(async (req, res) => {
+  console.log(req.body);
   const { error, value } = validatePayment(req.body);
   if (error) {
+    console.log(error);
     return res.status(400).json({ error: error.details[0].message });
   }
 
-  const payment = await paymentService.createPayment(value);
+  // Use the authenticated user ID as the merchant ID if not provided in the request
+  const paymentData = {
+    ...value,
+    user_id: value.merchant_id || req.userId
+  };
+
+  const payment = await paymentService.createPayment(paymentData, req.userId);
   res.status(201).json({ success: true, payment });
 });
 

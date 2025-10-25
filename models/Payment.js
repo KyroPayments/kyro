@@ -4,11 +4,12 @@ class Payment {
   constructor(data) {
     this.id = data.id;
     this.amount = data.amount;
-    this.currency = data.currency;
+    this.crypto_token_id = data.crypto_token_id;
+    this.description = data.description;
     this.wallet_id = data.wallet_id;
-    this.merchant_id = data.merchant_id;
+    this.user_id = data.user_id;
     this.status = data.status || 'pending';
-    this.transaction_id = data.transaction_id;
+    this.expires_at = data.expires_at;
     this.metadata = data.metadata || {};
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
@@ -16,19 +17,20 @@ class Payment {
 
   // Static method to create a new payment in the database
   static async create(data) {
-    const { id, amount, currency, wallet_id, merchant_id, status, transaction_id, metadata } = data;
+    const { id, amount, crypto_token_id, description, wallet_id, user_id, status, expires_at, metadata } = data;
     
     const { data: payment, error } = await supabase
       .from('payments')
       .insert([{
-        id,
+        //id,
         amount,
-        currency,
+        crypto_token_id,
+        description,
         wallet_id,
-        merchant_id,
+        user_id,
         status: status || 'pending',
-        transaction_id,
-        metadata: metadata || {}
+        expires_at,
+        //metadata: metadata || {}
       }])
       .select()
       .single();

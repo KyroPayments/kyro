@@ -1,11 +1,24 @@
 const Payment = require('../models/Payment');
 const Transaction = require('../models/Transaction');
 const Wallet = require('../models/Wallet');
+const CryptoToken = require('../models/CryptoToken');
 const { generateId } = require('../utils/idGenerator');
 
 class PaymentService {
-  async createPayment(paymentData) {
+  async createPayment(paymentData, userId) {
     try {
+      // Verify that the wallet belongs to the user
+      const wallet = await Wallet.findById(paymentData.wallet_id);
+      if (!wallet || wallet.user_id !== userId) {
+        throw new Error('Invalid wallet ID or wallet does not belong to user');
+      }
+      
+      // Verify that the crypto token exists
+      const cryptoToken = await CryptoToken.findById(paymentData.crypto_token_id);
+      if (!cryptoToken) {
+        throw new Error('Invalid crypto token ID');
+      }
+      
       const paymentId = generateId('pay');
       const now = new Date();
       

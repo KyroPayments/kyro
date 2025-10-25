@@ -3,13 +3,13 @@ const Joi = require('joi');
 // Schema for validating payment creation
 const createPaymentSchema = Joi.object({
   amount: Joi.number().positive().required(),
-  currency: Joi.string().valid('BTC', 'ETH', 'USDT', 'USDC', 'BNB', 'MATIC').required(),
-  wallet_id: Joi.string().required(),
+  crypto_token_id: Joi.string().required(), // Reference to crypto token instead of currency text
+  description: Joi.string().max(500).required(), // Description is now required
+  wallet_id: Joi.string().required(), // User must select their wallet
   merchant_id: Joi.string().required(),
-  description: Joi.string().max(500),
   metadata: Joi.object(),
   callback_url: Joi.string().uri(),
-  expires_at: Joi.date()
+  expires_at: Joi.date().required() // Expiration date is now required
 });
 
 // Validate payment data
