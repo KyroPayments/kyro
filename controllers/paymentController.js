@@ -4,10 +4,8 @@ const { handleAsyncError } = require('../utils/errorHandler');
 
 // Create a new payment
 const createPayment = handleAsyncError(async (req, res) => {
-  console.log(req.body);
   const { error, value } = validatePayment(req.body);
   if (error) {
-    console.log(error);
     return res.status(400).json({ error: error.details[0].message });
   }
 
