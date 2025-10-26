@@ -74,6 +74,17 @@ class PaymentService {
 
   async confirmPayment(id) {
     try {
+      // Get the payment to verify its current status
+      const payment = await Payment.findById(id);
+      if (!payment) {
+        throw new Error('Payment not found');
+      }
+      
+      // Only allow confirmation for pending payments
+      if (payment.status !== 'pending') {
+        throw new Error(`Payment cannot be confirmed. Current status: ${payment.status}`);
+      }
+      
       return await Payment.confirm(id);
     } catch (error) {
       throw new Error(`Error confirming payment: ${error.message}`);

@@ -28,6 +28,15 @@ const getPayment = handleAsyncError(async (req, res) => {
   res.status(200).json({ success: true, payment });
 });
 
+// Get payment by ID for public access (no authentication required)
+const getPaymentPublic = handleAsyncError(async (req, res) => {
+  const payment = await paymentService.getPaymentById(req.params.id);
+  if (!payment) {
+    return res.status(404).json({ error: 'Payment not found' });
+  }
+  res.status(200).json({ success: true, payment });
+});
+
 // Update payment
 const updatePayment = handleAsyncError(async (req, res) => {
   const payment = await paymentService.updatePayment(req.params.id, req.body);
@@ -58,6 +67,25 @@ const cancelPayment = handleAsyncError(async (req, res) => {
 const confirmPayment = handleAsyncError(async (req, res) => {
   const payment = await paymentService.confirmPayment(req.params.id);
   if (!payment) {
+    return res.status(404).json({ error: 'Payment not found' });  
+  }
+  res.status(200).json({ success: true, payment });
+});
+
+// Confirm payment (public endpoint)
+const confirmPaymentPublic = handleAsyncError(async (req, res) => {
+  // For a real implementation, you would verify the transaction hash on the blockchain
+  // and ensure it matches the payment amount and recipient before confirming
+  const { walletAddress, txHash } = req.body;
+  
+  if (!walletAddress || !txHash) {
+    return res.status(400).json({ error: 'Wallet address and transaction hash are required' });
+  }
+  
+  // In a real implementation, you would validate the transaction against the blockchain
+  // For this example, we'll just proceed with the confirmation
+  const payment = await paymentService.confirmPayment(req.params.id);
+  if (!payment) {
     return res.status(404).json({ error: 'Payment not found' });
   }
   res.status(200).json({ success: true, payment });
@@ -66,8 +94,10 @@ const confirmPayment = handleAsyncError(async (req, res) => {
 module.exports = {
   createPayment,
   getPayment,
+  getPaymentPublic,
   updatePayment,
   listPayments,
   cancelPayment,
-  confirmPayment
+  confirmPayment,
+  confirmPaymentPublic
 };
