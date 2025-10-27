@@ -69,8 +69,11 @@ class BlockchainNetwork {
   }
 
   // Static method to find all blockchain networks
-  static async findAll(page = 1, limit = 10, filters = {}) {
-    let query = supabase.from('blockchain_networks').select('*', { count: 'exact' });
+  static async findAll(page = 1, limit = 10, filters = {}, userWorkspace = 'testnet') {
+    let query = supabase
+      .from('blockchain_networks')
+      .select('*', { count: 'exact' })
+      .eq('workspace', userWorkspace); // Filter by user's workspace
     
     if (filters.network_type_id) {
       query = query.eq('network_type_id', filters.network_type_id);

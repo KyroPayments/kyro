@@ -12,9 +12,8 @@ class WalletService {
     }
   }
 
-  async createWallet(walletData) {
+  async createWallet(walletData, userId) {
     try {
-      //const walletId = generateId('wallet');
       const now = new Date();
       
       // Validate that address and name are provided by the user
@@ -27,8 +26,8 @@ class WalletService {
       }
       
       const wallet = await Wallet.create({
-        //id: walletId,
         ...walletData,
+        user_id: userId, // Associate wallet with user
         balance: walletData.balance || 0,
         created_at: now,
         updated_at: now
@@ -40,17 +39,21 @@ class WalletService {
     }
   }
 
-  async getWalletById(id) {
+  async getWalletById(id, userId) {
     try {
-      return await Wallet.findById(id);
+      const wallet = await Wallet.findById(id);
+      if (wallet && wallet.user_id !== userId) {
+        return null; // Wallet doesn't belong to the authenticated user
+      }
+      return wallet;
     } catch (error) {
       throw new Error(`Error retrieving wallet: ${error.message}`);
     }
   }
 
-  async getWalletBalance(id) {
+  async getWalletBalance(id, userId) {
     try {
-      const wallet = await this.getWalletById(id);
+      const wallet = await this.getWalletById(id, userId);
       if (!wallet) return null;
       
       // Get the network type to return with the balance
@@ -67,11 +70,11 @@ class WalletService {
     }
   }
 
-  async depositFunds(walletId, amount, network_type) {
+  async depositFunds(walletId, amount, network_type, userId) {
     try {
-      const wallet = await this.getWalletById(walletId);
+      const wallet = await this.getWalletById(walletId, userId);
       if (!wallet) {
-        return { success: false, error: 'Wallet not found' };
+        return { success: false, error: 'Wallet not found or does not belong to user' };
       }
       
       // In a real implementation, this would interact with blockchain
@@ -98,11 +101,11 @@ class WalletService {
     }
   }
 
-  async withdrawFunds(walletId, amount, toAddress, network_type) {
+  async withdrawFunds(walletId, amount, toAddress, network_type, userId) {
     try {
-      const wallet = await this.getWalletById(walletId);
+      const wallet = await this.getWalletById(walletId, userId);
       if (!wallet) {
-        return { success: false, error: 'Wallet not found' };
+        return { success: false, error: 'Wallet not found or does not belong to user' };
       }
       
       const requestedAmount = parseFloat(amount);
@@ -137,10 +140,8 @@ class WalletService {
 
   async listWallets(page, limit, userId) {
     try {
-      const filters = {};
-      if (userId) {
-        filters.user_id = userId;
-      }
+      // Always filter wallets by the authenticated user
+      const filters = { user_id: userId };
       
       return await Wallet.findAll(page, limit, filters);
     } catch (error) {

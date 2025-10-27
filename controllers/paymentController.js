@@ -15,7 +15,7 @@ const createPayment = handleAsyncError(async (req, res) => {
     user_id: value.merchant_id || req.userId
   };
 
-  const payment = await paymentService.createPayment(paymentData, req.userId);
+  const payment = await paymentService.createPayment(paymentData, req.userId, req.userWorkspace);
   res.status(201).json({ success: true, payment });
 });
 
@@ -50,7 +50,7 @@ const updatePayment = handleAsyncError(async (req, res) => {
 const listPayments = handleAsyncError(async (req, res) => {
   const { page = 1, limit = 10, status, walletId } = req.query;
   const filters = { status, walletId };
-  const result = await paymentService.listPayments(page, limit, filters);
+  const result = await paymentService.listPayments(page, limit, filters, req.userWorkspace);
   res.status(200).json({ success: true, ...result });
 });
 

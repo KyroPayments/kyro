@@ -12,6 +12,7 @@ class Payment {
     this.expires_at = data.expires_at;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
+    this.workspace = data.workspace;
     
     // Add crypto token information if available
     if (data.crypto_token) {
@@ -127,7 +128,6 @@ class Payment {
         currency: cryptoToken ? cryptoToken.symbol : null,
         blockchain_network: cryptoToken && cryptoToken.blockchain_network ? cryptoToken.blockchain_network : null
       };
-      
       return new Payment(enhancedPayment);
     }
     
@@ -170,7 +170,7 @@ class Payment {
   }
 
   // Static method to find payments with pagination
-  static async findAll(page = 1, limit = 10, filters = {}) {
+  static async findAll(page = 1, limit = 10, filters = {}, userWorkspace = 'testnet') {
     // First, get the payments with their basic information
     let query = supabase
       .from('payments')
@@ -187,6 +187,9 @@ class Payment {
     if (filters.status) {
       query = query.eq('status', filters.status);
     }
+    
+    // Filter by user's workspace
+    query = query.eq('workspace', userWorkspace);
 
     query = query.range((page - 1) * limit, page * limit - 1).order('created_at', { ascending: false });
 
@@ -230,8 +233,9 @@ class Payment {
           if (tokenData.blockchain_network_id) {
             const { data: networkData, error: networkError } = await supabase
               .from('blockchain_networks')
-              .select('id, name, symbol')
+              .select('id, name, symbol, workspace')
               .eq('id', tokenData.blockchain_network_id)
+              .eq('workspace', userWorkspace) // Filter network by user's workspace
               .single();
               
             if (!networkError && networkData) {

@@ -124,20 +124,30 @@ const getProfile = handleAsyncError(async (req, res) => {
 // Update user profile
 const updateProfile = handleAsyncError(async (req, res) => {
   // Note: In a real implementation, we would validate req.body against allowed fields
-  // For now, we'll just allow name updates
-  const { name } = req.body;
+  // For now, we'll just allow name and workspace updates
+  const { name, workspace } = req.body;
   
-  if (!name) {
-    return res.status(400).json({ error: 'Name is required' });
+  if (!name && !workspace) {
+    return res.status(400).json({ error: 'Name or workspace is required' });
   }
-
+  
+  // Validate workspace if provided
+  if (workspace && workspace !== 'testnet' && workspace !== 'mainnet') {
+    return res.status(400).json({ error: 'Workspace must be either "testnet" or "mainnet"' });
+  }
+  
   // Update user in database
+  const updateData = {};
+  if (name) updateData.name = name;
+  if (workspace) updateData.workspace = workspace;
+  updateData.updated_at = new Date().toISOString();
+
   const { data, error } = await require('@supabase/supabase-js').createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
   .from('users')
-  .update({ name, updated_at: new Date().toISOString() })
+  .update(updateData)
   .eq('id', req.userId)
   .select()
   .single();

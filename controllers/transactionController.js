@@ -9,7 +9,7 @@ const createTransaction = handleAsyncError(async (req, res) => {
     return res.status(400).json({ error: error.details[0].message });
   }
 
-  const transaction = await transactionService.createTransaction(value);
+  const transaction = await transactionService.createTransaction(value, req.userId, req.userWorkspace);
   res.status(201).json({ success: true, transaction });
 });
 
@@ -26,7 +26,7 @@ const getTransaction = handleAsyncError(async (req, res) => {
 const listTransactions = handleAsyncError(async (req, res) => {
   const { page = 1, limit = 10, status, walletId, type } = req.query;
   const filters = { status, walletId, type };
-  const result = await transactionService.listTransactions(page, limit, filters);
+  const result = await transactionService.listTransactions(page, limit, filters, req.userWorkspace);
   res.status(200).json({ success: true, ...result });
 });
 

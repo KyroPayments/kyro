@@ -97,8 +97,11 @@ class Transaction {
   }
 
   // Static method to find transactions with pagination
-  static async findAll(page = 1, limit = 10, filters = {}) {
-    let query = supabase.from('transactions').select('*', { count: 'exact' });
+  static async findAll(page = 1, limit = 10, filters = {}, userWorkspace = 'testnet') {
+    let query = supabase
+      .from('transactions')
+      .select('*', { count: 'exact' })
+      .eq('workspace', userWorkspace); // Filter by user's workspace
     
     if (filters.from_wallet) {
       query = query.eq('from_wallet', filters.from_wallet);

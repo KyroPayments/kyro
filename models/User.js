@@ -9,9 +9,10 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const User = {
   async create(userData) {
     const { email, name, password_hash } = userData;
+    // Set default workspace to testnet
     const { data, error } = await supabase
       .from('users')
-      .insert([{ email, name, password_hash }])
+      .insert([{ email, name, password_hash, workspace: 'testnet' }])
       .select()
       .single();
 
@@ -52,6 +53,25 @@ const User = {
     }
 
     if (!data) return null;
+
+    // Return user without password hash
+    const { password_hash: _, ...user } = data;
+    return user;
+  },
+  
+  async updateWorkspace(id, workspace) {
+    if (workspace !== 'testnet' && workspace !== 'mainnet') {
+      throw new Error('Invalid workspace. Must be either "testnet" or "mainnet"');
+    }
+    
+    const { data, error } = await supabase
+      .from('users')
+      .update({ workspace, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
 
     // Return user without password hash
     const { password_hash: _, ...user } = data;

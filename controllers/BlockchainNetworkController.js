@@ -10,7 +10,7 @@ const getAllBlockchainNetworks = handleAsyncError(async (req, res) => {
     filters.network_type_id = network_type_id;
   }
   
-  const result = await BlockchainNetwork.findAll(page, limit, filters);
+  const result = await BlockchainNetwork.findAll(page, limit, filters, req.userWorkspace);
   res.status(200).json({ success: true, ...result });
 });
 

@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const config = require('./config');
 const routes = require('./routes');
 const logger = require('./utils/logger');
+const { workspaceMiddleware } = require('./middleware/workspaceMiddleware');
 
 const app = express();
 
@@ -19,8 +20,8 @@ app.use(express.json({ limit: '10mb' }));
 // Logging middleware
 app.use(logger.requestLogger);
 
-// Routes
-app.use('/api', routes);
+// Workspace middleware - must be applied after authentication middleware but before routes
+app.use('/api', workspaceMiddleware, routes);
 
 // Error handling middleware
 app.use(logger.errorLogger);

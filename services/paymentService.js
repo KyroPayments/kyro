@@ -5,29 +5,48 @@ const CryptoToken = require('../models/CryptoToken');
 const { generateId } = require('../utils/idGenerator');
 
 class PaymentService {
-  async createPayment(paymentData, userId) {
+  async createPayment(paymentData, userId, userWorkspace = 'testnet') {
     try {
-      // Verify that the wallet belongs to the user
+      // Verify that the wallet belongs to the user (wallets are cross-workspace)
       const wallet = await Wallet.findById(paymentData.wallet_id);
       if (!wallet || wallet.user_id !== userId) {
         throw new Error('Invalid wallet ID or wallet does not belong to user');
       }
       
-      // Verify that the crypto token exists
+      // Verify that the crypto token exists and belongs to the correct workspace
+      // For this, we need to check that the token's blockchain network is in the user's workspace
       const cryptoToken = await CryptoToken.findById(paymentData.crypto_token_id);
       if (!cryptoToken) {
         throw new Error('Invalid crypto token ID');
       }
       
+      // Verify that the blockchain network for this token belongs to the user's workspace
+      // We'll need to check the blockchain network the token is associated with
+      const { data: network, error: networkError } = await require('../utils/db/client').supabase
+        .from('blockchain_networks')
+        .select('*')
+        .eq('id', cryptoToken.blockchain_network_id)
+        .eq('workspace', userWorkspace)
+        .single();
+
+      if (networkError) {
+        if (networkError.code === 'PGRST116') { // Record not found
+          throw new Error('Crypto token does not belong to user\'s workspace');
+        }
+        throw new Error(`Error retrieving blockchain network: ${networkError.message}`);
+      }
+      
       const paymentId = generateId('pay');
       const now = new Date();
       
+      // Include the user's workspace when creating the payment
       const payment = await Payment.create({
         id: paymentId,
         ...paymentData,
         status: 'pending',
         created_at: now,
-        updated_at: now
+        updated_at: now,
+        workspace: userWorkspace // Set the payment's workspace to the user's workspace
       });
       
       return payment;
@@ -52,13 +71,13 @@ class PaymentService {
     }
   }
 
-  async listPayments(page, limit, filters) {
+  async listPayments(page, limit, filters, userWorkspace = 'testnet') {
     try {
       const paymentFilters = {};
       if (filters.status) paymentFilters.status = filters.status;
       if (filters.wallet_id) paymentFilters.wallet_id = filters.wallet_id;
       
-      return await Payment.findAll(page, limit, paymentFilters);
+      return await Payment.findAll(page, limit, paymentFilters, userWorkspace);
     } catch (error) {
       throw new Error(`Error listing payments: ${error.message}`);
     }

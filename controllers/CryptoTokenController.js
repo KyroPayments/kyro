@@ -13,7 +13,7 @@ const getAllCryptoTokens = handleAsyncError(async (req, res) => {
     filters.is_active = is_active === 'true' || is_active === true;
   }
   
-  const result = await CryptoToken.findAll(page, limit, filters);
+  const result = await CryptoToken.findAll(page, limit, filters, req.userWorkspace);
   res.status(200).json({ success: true, ...result });
 });
 
@@ -28,7 +28,7 @@ const getCryptoTokenById = handleAsyncError(async (req, res) => {
 
 // Get crypto tokens by blockchain network
 const getCryptoTokensByNetwork = handleAsyncError(async (req, res) => {
-  const result = await CryptoToken.findByBlockchainNetworkId(req.params.networkId);
+  const result = await CryptoToken.findByBlockchainNetworkId(req.params.networkId, req.userWorkspace);
   res.status(200).json({ success: true, cryptoTokens: result });
 });
 
