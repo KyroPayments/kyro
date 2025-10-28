@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS payments (
     description TEXT, -- Description of the payment
     status VARCHAR(20) DEFAULT 'pending',
     payment_address VARCHAR(255),
+    transaction_hash VARCHAR(255) UNIQUE,
     workspace VARCHAR(255) NOT NULL DEFAULT 'testnet',
     expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -95,7 +96,6 @@ CREATE TABLE IF NOT EXISTS transactions (
     crypto_token_id UUID NOT NULL REFERENCES crypto_tokens(id), -- Reference to crypto token instead of currency text
     type VARCHAR(20) NOT NULL, -- 'inbound', 'outbound', 'payment', etc.
     status VARCHAR(20) DEFAULT 'pending',
-    transaction_hash VARCHAR(255),
     block_number INTEGER,
     from_address VARCHAR(255),
     to_address VARCHAR(255),
@@ -113,6 +113,7 @@ CREATE INDEX IF NOT EXISTS idx_wallets_network_type_id ON wallets(network_type_i
 CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_wallet_id ON payments(wallet_id);
 CREATE INDEX IF NOT EXISTS idx_payments_crypto_token_id ON payments(crypto_token_id);
+CREATE INDEX IF NOT EXISTS idx_payments_transaction_hash ON payments(transaction_hash);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON transactions(wallet_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_payment_id ON transactions(payment_id);

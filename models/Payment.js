@@ -94,7 +94,7 @@ class Payment {
       if (payment.crypto_token_id) {
         const { data: tokenData, error: tokenError } = await supabase
           .from('crypto_tokens')
-          .select('id, name, symbol, blockchain_network_id')
+          .select('id, name, symbol, blockchain_network_id, contract_address')
           .eq('id', payment.crypto_token_id)
           .single();
         
@@ -167,6 +167,23 @@ class Payment {
     }
 
     return true;
+  }
+
+  static async findByTxHash(txHash) {
+    const { data: payment, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('transaction_hash', txHash)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') { // Record not found
+        return null;
+      }
+      throw new Error(`Error retrieving payment by tx hash: ${error.message}`);
+    }
+
+    return payment ? new Payment(payment) : null;
   }
 
   // Static method to find payments with pagination
@@ -291,10 +308,10 @@ class Payment {
   }
 
   // Static method to confirm a payment
-  static async confirm(id) {
+  static async confirm(id, txHash, fromAddress) {
     const { data: payment, error } = await supabase
       .from('payments')
-      .update({ status: 'confirmed', updated_at: new Date() })
+      .update({ status: 'confirmed', updated_at: new Date(), transaction_hash: txHash, payment_address: fromAddress })
       .eq('id', id)
       .select()
       .single();
