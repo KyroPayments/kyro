@@ -13,6 +13,8 @@ class Payment {
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
     this.workspace = data.workspace;
+    this.transaction_hash = data.transaction_hash;
+    this.payment_address = data.payment_address;
     
     // Add crypto token information if available
     if (data.crypto_token) {
