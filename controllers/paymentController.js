@@ -151,10 +151,13 @@ const confirmPaymentPublic = handleAsyncError(async (req, res) => {
       if (transaction.to.toLowerCase() !== wallet.address.toLowerCase()) {
         return res.status(400).json({ error: 'Transaction recipient does not match payment wallet address' });
       }
+      
 
       // Calculate expected amount in wei (smallest unit for the token)
-      const expectedAmount = web3.utils.toWei(payment.amount.toString(), 'ether');
-      const transactionAmount = transaction.value;
+      let decimals = payment.crypto_token.decimals || 18;
+      const expectedAmount = BigInt(Math.floor(payment.amount * (10 ** Number(decimals))));
+      //const expectedAmount = web3.utils.toWei(payment.amount.toString(), 'ether');
+      const transactionAmount = BigInt(transaction.value);
 
       // Compare amounts
       if (transactionAmount !== expectedAmount) {
