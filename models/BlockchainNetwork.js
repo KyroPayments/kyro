@@ -72,8 +72,11 @@ class BlockchainNetwork {
   static async findAll(page = 1, limit = 10, filters = {}, userWorkspace = 'testnet') {
     let query = supabase
       .from('blockchain_networks')
-      .select('*', { count: 'exact' })
-      .eq('workspace', userWorkspace); // Filter by user's workspace
+      .select('*', { count: 'exact' });
+
+    if(userWorkspace){
+      query = query.eq('workspace', userWorkspace); // Filter by user's workspace
+    }
     
     if (filters.network_type_id) {
       query = query.eq('network_type_id', filters.network_type_id);

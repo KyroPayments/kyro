@@ -1,6 +1,7 @@
 const paymentService = require('../services/paymentService');
 const { validatePayment } = require('../validators/paymentValidator');
 const { handleAsyncError } = require('../utils/errorHandler');
+const User = require('../models/User');
 
 // Create a new payment
 const createPayment = handleAsyncError(async (req, res) => {
@@ -25,6 +26,12 @@ const getPayment = handleAsyncError(async (req, res) => {
   if (!payment) {
     return res.status(404).json({ error: 'Payment not found' });
   }
+  
+  // Verify that the authenticated user owns this payment
+  if (payment.user_id !== req.userId) {
+    return res.status(403).json({ error: 'Unauthorized: You do not own this payment' });
+  }
+  
   res.status(200).json({ success: true, payment });
 });
 
@@ -39,37 +46,60 @@ const getPaymentPublic = handleAsyncError(async (req, res) => {
 
 // Update payment
 const updatePayment = handleAsyncError(async (req, res) => {
-  const payment = await paymentService.updatePayment(req.params.id, req.body);
+  const payment = await paymentService.getPaymentById(req.params.id);
   if (!payment) {
     return res.status(404).json({ error: 'Payment not found' });
   }
-  res.status(200).json({ success: true, payment });
+  
+  // Verify that the authenticated user owns this payment
+  if (payment.user_id !== req.userId) {
+    return res.status(403).json({ error: 'Unauthorized: You do not own this payment' });
+  }
+  
+  const updatedPayment = await paymentService.updatePayment(req.params.id, req.body);
+  res.status(200).json({ success: true, payment: updatedPayment });
 });
 
 // List payments
 const listPayments = handleAsyncError(async (req, res) => {
   const { page = 1, limit = 10, status, walletId } = req.query;
   const filters = { status, walletId };
-  const result = await paymentService.listPayments(page, limit, filters, req.userWorkspace);
+  const user = await User.findById(req.userId);
+  const workspace = user?.workspace || 'testnet';
+  const result = await paymentService.listPayments(page, limit, filters, workspace, req.userId);
   res.status(200).json({ success: true, ...result });
 });
 
 // Cancel payment
 const cancelPayment = handleAsyncError(async (req, res) => {
-  const payment = await paymentService.cancelPayment(req.params.id);
+  const payment = await paymentService.getPaymentById(req.params.id);
   if (!payment) {
     return res.status(404).json({ error: 'Payment not found' });
   }
-  res.status(200).json({ success: true, payment });
+  
+  // Verify that the authenticated user owns this payment
+  if (payment.user_id !== req.userId) {
+    return res.status(403).json({ error: 'Unauthorized: You do not own this payment' });
+  }
+  
+  const cancelledPayment = await paymentService.cancelPayment(req.params.id);
+  res.status(200).json({ success: true, payment: cancelledPayment });
 });
 
 // Confirm payment
 const confirmPayment = handleAsyncError(async (req, res) => {
-  const payment = await paymentService.confirmPayment(req.params.id);
+  const payment = await paymentService.getPaymentById(req.params.id);
   if (!payment) {
     return res.status(404).json({ error: 'Payment not found' });  
   }
-  res.status(200).json({ success: true, payment });
+  
+  // Verify that the authenticated user owns this payment
+  if (payment.user_id !== req.userId) {
+    return res.status(403).json({ error: 'Unauthorized: You do not own this payment' });
+  }
+  
+  const confirmedPayment = await paymentService.confirmPayment(req.params.id);
+  res.status(200).json({ success: true, payment: confirmedPayment });
 });
 
 // Confirm payment (public endpoint)
@@ -231,7 +261,7 @@ const confirmPaymentPublic = handleAsyncError(async (req, res) => {
           return res.status(400).json({ error: `Transfer amount does not match payment amount. Expected: ${expectedDisplay}, Got: ${actualDisplay}` });
         }
       } catch (e) {
-        console.log("e", e);
+        //console.log("e", e);
         return res.status(400).json({ error: `Error validating ERC20 token transfer: ${e.message}` });
       }
     }

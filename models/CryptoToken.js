@@ -63,7 +63,7 @@ class CryptoToken {
       .from('blockchain_networks')
       .select('*')
       .eq('id', blockchain_network_id)
-      .eq('workspace', userWorkspace)
+      //.eq('workspace', userWorkspace)
       .single();
 
     if (networkError) {
@@ -83,7 +83,6 @@ class CryptoToken {
     if (error) {
       throw new Error(`Error retrieving crypto tokens: ${error.message}`);
     }
-
     return tokens.map(token => new CryptoToken(token));
   }
 

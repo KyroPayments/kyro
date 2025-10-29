@@ -37,7 +37,7 @@ class Payment {
 
   // Static method to create a new payment in the database
   static async create(data) {
-    const { amount, crypto_token_id, description, wallet_id, user_id, status, expires_at } = data;
+    const { amount, crypto_token_id, description, wallet_id, user_id, status, expires_at, workspace } = data;
     
     const { data: payment, error } = await supabase
       .from('payments')
@@ -48,7 +48,8 @@ class Payment {
         wallet_id,
         user_id,
         status: status || 'pending',
-        expires_at
+        expires_at,
+        workspace
       }])
       .select()
       .single();
@@ -189,7 +190,7 @@ class Payment {
   }
 
   // Static method to find payments with pagination
-  static async findAll(page = 1, limit = 10, filters = {}, userWorkspace = 'testnet') {
+  static async findAll(page = 1, limit = 10, filters = {}, userWorkspace = 'testnet', userId = null) {
     // First, get the payments with their basic information
     let query = supabase
       .from('payments')
@@ -209,6 +210,11 @@ class Payment {
     
     // Filter by user's workspace
     query = query.eq('workspace', userWorkspace);
+    
+    // Filter by user ID to ensure user can only see their own payments
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
 
     query = query.range((page - 1) * limit, page * limit - 1).order('created_at', { ascending: false });
 

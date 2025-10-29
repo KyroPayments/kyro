@@ -89,7 +89,7 @@ class Wallet {
   }
 
   // Static method to find wallets with pagination
-  static async findAll(page = 1, limit = 10, filters = {}) {
+  static async findAll(page = 1, limit = 10, filters = {}, userId = null) {
     let query = supabase.from('wallets').select('*', { count: 'exact' });
     
     if (filters.user_id) {
@@ -102,6 +102,11 @@ class Wallet {
     
     if (filters.is_active !== undefined) {
       query = query.eq('is_active', filters.is_active);
+    }
+    
+    // Filter by user ID to ensure user can only see their own wallets
+    if (userId) {
+      query = query.eq('user_id', userId);
     }
 
     query = query.range((page - 1) * limit, page * limit - 1).order('created_at', { ascending: false });

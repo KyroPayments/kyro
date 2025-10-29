@@ -141,9 +141,9 @@ class WalletService {
   async listWallets(page, limit, userId) {
     try {
       // Always filter wallets by the authenticated user
-      const filters = { user_id: userId };
+      const filters = {}; // The userId parameter will handle the filtering
       
-      return await Wallet.findAll(page, limit, filters);
+      return await Wallet.findAll(page, limit, filters, userId);
     } catch (error) {
       throw new Error(`Error listing wallets: ${error.message}`);
     }

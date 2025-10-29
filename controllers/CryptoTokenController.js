@@ -28,7 +28,7 @@ const getCryptoTokenById = handleAsyncError(async (req, res) => {
 
 // Get crypto tokens by blockchain network
 const getCryptoTokensByNetwork = handleAsyncError(async (req, res) => {
-  const result = await CryptoToken.findByBlockchainNetworkId(req.params.networkId, req.userWorkspace);
+  const result = await CryptoToken.findByBlockchainNetworkId(req.params.networkId);
   res.status(200).json({ success: true, cryptoTokens: result });
 });
 

@@ -3,40 +3,45 @@ const { supabase } = require('../utils/db/client');
 class Transaction {
   constructor(data) {
     this.id = data.id;
-    this.from_wallet = data.from_wallet;
-    this.to_wallet = data.to_wallet;
+    this.user_id = data.user_id;
+    this.wallet_id = data.wallet_id; // Reference to the wallet involved in the transaction
+    this.payment_id = data.payment_id; // Reference to the payment, if applicable
     this.amount = data.amount;
-    this.currency = data.currency;
+    this.crypto_token_id = data.crypto_token_id; // Reference to crypto token instead of currency
+    this.type = data.type; // 'inbound', 'outbound', 'payment', etc.
     this.status = data.status || 'pending';
-    this.fee = data.fee || 0;
-    this.tx_hash = data.tx_hash; // Blockchain transaction hash
     this.block_number = data.block_number;
-    this.confirmations = data.confirmations || 0;
-    this.type = data.type || 'transfer'; // transfer, payment, refund
-    this.metadata = data.metadata || {};
+    this.from_address = data.from_address;
+    this.to_address = data.to_address;
+    this.workspace = data.workspace;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
+    // Add currency field if crypto_token is available
+    if (data.crypto_token) {
+      this.currency = data.crypto_token.symbol;
+      this.crypto_token = data.crypto_token;
+    }
   }
 
   // Static method to create a new transaction in the database
   static async create(data) {
-    const { id, from_wallet, to_wallet, amount, currency, status, fee, tx_hash, block_number, confirmations, type, metadata } = data;
+    const { id, user_id, wallet_id, payment_id, amount, crypto_token_id, type, status, block_number, from_address, to_address, workspace } = data;
     
     const { data: transaction, error } = await supabase
       .from('transactions')
       .insert([{
         id,
-        from_wallet,
-        to_wallet,
+        user_id,
+        wallet_id,
+        payment_id,
         amount,
-        currency,
+        crypto_token_id,
+        type,
         status: status || 'pending',
-        fee: fee || 0,
-        tx_hash,
         block_number,
-        confirmations: confirmations || 0,
-        type: type || 'transfer',
-        metadata: metadata || {}
+        from_address,
+        to_address,
+        workspace
       }])
       .select()
       .single();
@@ -63,7 +68,50 @@ class Transaction {
       throw new Error(`Error retrieving transaction: ${error.message}`);
     }
 
-    return transaction ? new Transaction(transaction) : null;
+    if (transaction) {
+      // Fetch crypto token information
+      let cryptoToken = null;
+      if (transaction.crypto_token_id) {
+        const { data: tokenData, error: tokenError } = await supabase
+          .from('crypto_tokens')
+          .select('id, name, symbol, blockchain_network_id')
+          .eq('id', transaction.crypto_token_id)
+          .single();
+        
+        if (!tokenError && tokenData) {
+          cryptoToken = tokenData;
+          
+          // Fetch blockchain network for this token
+          let blockchainNetwork = null;
+          if (tokenData.blockchain_network_id) {
+            const { data: networkData, error: networkError } = await supabase
+              .from('blockchain_networks')
+              .select('id, name, symbol')
+              .eq('id', tokenData.blockchain_network_id)
+              .eq('workspace', transaction.workspace) // Filter network by transaction's workspace
+              .single();
+              
+            if (!networkError && networkData) {
+              blockchainNetwork = networkData;
+            }
+          }
+          
+          // Add blockchain network to the crypto token
+          cryptoToken.blockchain_network = blockchainNetwork;
+        }
+      }
+      
+      // Combine transaction and crypto token data
+      const enhancedTransaction = {
+        ...transaction,
+        crypto_token: cryptoToken,
+        currency: cryptoToken ? cryptoToken.symbol : null
+      };
+      
+      return new Transaction(enhancedTransaction);
+    }
+
+    return null;
   }
 
   // Static method to update a transaction
@@ -97,18 +145,18 @@ class Transaction {
   }
 
   // Static method to find transactions with pagination
-  static async findAll(page = 1, limit = 10, filters = {}, userWorkspace = 'testnet') {
+  static async findAll(page = 1, limit = 10, filters = {}, userWorkspace = 'testnet', userId = null) {
     let query = supabase
       .from('transactions')
       .select('*', { count: 'exact' })
       .eq('workspace', userWorkspace); // Filter by user's workspace
     
-    if (filters.from_wallet) {
-      query = query.eq('from_wallet', filters.from_wallet);
+    if (filters.wallet_id) {
+      query = query.eq('wallet_id', filters.wallet_id);
     }
     
-    if (filters.to_wallet) {
-      query = query.eq('to_wallet', filters.to_wallet);
+    if (filters.payment_id) {
+      query = query.eq('payment_id', filters.payment_id);
     }
     
     if (filters.status) {
@@ -118,21 +166,67 @@ class Transaction {
     if (filters.type) {
       query = query.eq('type', filters.type);
     }
-    
-    if (filters.tx_hash) {
-      query = query.eq('tx_hash', filters.tx_hash);
+
+    // Filter by user ID to ensure user can only see their own transactions
+    if (userId) {
+      query = query.eq('user_id', userId);
     }
 
     query = query.range((page - 1) * limit, page * limit - 1).order('created_at', { ascending: false });
 
-    const { data, error, count } = await query;
+    const { data: transactionData, error, count } = await query;
 
     if (error) {
       throw new Error(`Error retrieving transactions: ${error.message}`);
     }
 
+    // Enhance each transaction with crypto token information
+    const enhancedTransactions = [];
+    for (const transaction of transactionData) {
+      // Fetch crypto token information
+      let cryptoToken = null;
+      if (transaction.crypto_token_id) {
+        const { data: tokenData, error: tokenError } = await supabase
+          .from('crypto_tokens')
+          .select('id, name, symbol, blockchain_network_id')
+          .eq('id', transaction.crypto_token_id)
+          .single();
+        
+        if (!tokenError && tokenData) {
+          cryptoToken = tokenData;
+          
+          // Fetch blockchain network for this token
+          let blockchainNetwork = null;
+          if (tokenData.blockchain_network_id) {
+            const { data: networkData, error: networkError } = await supabase
+              .from('blockchain_networks')
+              .select('id, name, symbol')
+              .eq('id', tokenData.blockchain_network_id)
+              .eq('workspace', userWorkspace) // Filter network by user's workspace
+              .single();
+              
+            if (!networkError && networkData) {
+              blockchainNetwork = networkData;
+            }
+          }
+          
+          // Add blockchain network to the crypto token
+          cryptoToken.blockchain_network = blockchainNetwork;
+        }
+      }
+      
+      // Combine transaction and crypto token data
+      const enhancedTransaction = {
+        ...transaction,
+        crypto_token: cryptoToken,
+        currency: cryptoToken ? cryptoToken.symbol : null
+      };
+      
+      enhancedTransactions.push(new Transaction(enhancedTransaction));
+    }
+
     return {
-      transactions: data.map(transaction => new Transaction(transaction)),
+      transactions: enhancedTransactions,
       total: count,
       page: parseInt(page),
       limit: parseInt(limit),

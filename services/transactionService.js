@@ -1,5 +1,6 @@
 const Transaction = require('../models/Transaction');
 const Wallet = require('../models/Wallet');
+const CryptoToken = require('../models/CryptoToken'); // Import CryptoToken
 const { generateId } = require('../utils/idGenerator');
 
 class TransactionService {
@@ -71,15 +72,15 @@ class TransactionService {
     }
   }
 
-  async listTransactions(page, limit, filters, userWorkspace = 'testnet') {
+  async listTransactions(page, limit, filters, userWorkspace = 'testnet', userId = null) {
     try {
       const transactionFilters = {};
       if (filters.status) transactionFilters.status = filters.status;
-      if (filters.from_wallet) transactionFilters.from_wallet = filters.from_wallet;
-      if (filters.to_wallet) transactionFilters.to_wallet = filters.to_wallet;
+      if (filters.wallet_id) transactionFilters.wallet_id = filters.wallet_id;
+      if (filters.payment_id) transactionFilters.payment_id = filters.payment_id;
       if (filters.type) transactionFilters.type = filters.type;
       
-      return await Transaction.findAll(page, limit, transactionFilters, userWorkspace);
+      return await Transaction.findAll(page, limit, transactionFilters, userWorkspace, userId);
     } catch (error) {
       throw new Error(`Error listing transactions: ${error.message}`);
     }

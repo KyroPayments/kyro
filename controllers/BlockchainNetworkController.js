@@ -1,5 +1,6 @@
 const BlockchainNetwork = require('../models/BlockchainNetwork');
 const { handleAsyncError } = require('../utils/errorHandler');
+const User = require('../models/User');
 
 // Get all blockchain networks
 const getAllBlockchainNetworks = handleAsyncError(async (req, res) => {
@@ -10,7 +11,13 @@ const getAllBlockchainNetworks = handleAsyncError(async (req, res) => {
     filters.network_type_id = network_type_id;
   }
   
-  const result = await BlockchainNetwork.findAll(page, limit, filters, req.userWorkspace);
+  let workspace = undefined;
+  if(req.userId){
+    const user = await User.findById(req.userId);
+    workspace = user?.workspace || 'testnet';
+  }
+  
+  const result = await BlockchainNetwork.findAll(page, limit, filters, workspace);
   res.status(200).json({ success: true, ...result });
 });
 

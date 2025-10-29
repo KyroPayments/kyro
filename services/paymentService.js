@@ -26,7 +26,7 @@ class PaymentService {
         .from('blockchain_networks')
         .select('*')
         .eq('id', cryptoToken.blockchain_network_id)
-        .eq('workspace', userWorkspace)
+        //.eq('workspace', userWorkspace)
         .single();
 
       if (networkError) {
@@ -35,6 +35,7 @@ class PaymentService {
         }
         throw new Error(`Error retrieving blockchain network: ${networkError.message}`);
       }
+
       
       const paymentId = generateId('pay');
       const now = new Date();
@@ -46,7 +47,7 @@ class PaymentService {
         status: 'pending',
         created_at: now,
         updated_at: now,
-        workspace: userWorkspace // Set the payment's workspace to the user's workspace
+        workspace: network.workspace // Set the payment's workspace to the user's workspace
       });
       
       return payment;
@@ -71,13 +72,12 @@ class PaymentService {
     }
   }
 
-  async listPayments(page, limit, filters, userWorkspace = 'testnet') {
+  async listPayments(page, limit, filters, userWorkspace = 'testnet', userId = null) {
     try {
       const paymentFilters = {};
       if (filters.status) paymentFilters.status = filters.status;
       if (filters.wallet_id) paymentFilters.wallet_id = filters.wallet_id;
-      
-      return await Payment.findAll(page, limit, paymentFilters, userWorkspace);
+      return await Payment.findAll(page, limit, paymentFilters, userWorkspace, userId);
     } catch (error) {
       throw new Error(`Error listing payments: ${error.message}`);
     }
