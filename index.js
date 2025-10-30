@@ -5,6 +5,8 @@ const config = require('./config');
 const routes = require('./routes');
 const logger = require('./utils/logger');
 const { workspaceMiddleware } = require('./middleware/workspaceMiddleware');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./config/swaggerOptions');
 
 const app = express();
 
@@ -20,6 +22,9 @@ app.use(express.json({ limit: '10mb' }));
 // Logging middleware
 app.use(logger.requestLogger);
 
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+
 // Apply routes with workspace middleware
 app.use('/api', workspaceMiddleware, routes);
 
@@ -34,6 +39,7 @@ app.get('/health', (req, res) => {
 const PORT = config.port || 3000;
 app.listen(PORT, () => {
   console.log(`Kyro payment platform server running on port ${PORT}`);
+  console.log(`Swagger documentation available at http://localhost:${PORT}/api-docs`);
 });
 
 module.exports = app;
