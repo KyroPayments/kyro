@@ -144,7 +144,6 @@ class Payment {
         currency: cryptoToken ? cryptoToken.symbol : null,
         blockchain_network: cryptoToken && cryptoToken.blockchain_network ? cryptoToken.blockchain_network : null
       };
-      console.log(enhancedPayment)
       return new Payment(enhancedPayment);
     }
     
