@@ -89,6 +89,8 @@ CREATE TABLE IF NOT EXISTS payments (
     payer_state VARCHAR(255),
     payer_zip VARCHAR(255),
     payer_country VARCHAR(255),
+    callback_url VARCHAR(400),
+    cancel_url VARCHAR(400),
     workspace VARCHAR(255) NOT NULL DEFAULT 'testnet',
     expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

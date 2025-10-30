@@ -24,6 +24,8 @@ class Payment {
     this.payer_state = data.payer_state;
     this.payer_zip = data.payer_zip;
     this.payer_country = data.payer_country;
+    this.callback_url = data.callback_url;
+    this.cancel_url = data.cancel_url; // Map both field names for compatibility
     
     // Add crypto token information if available
     if (data.crypto_token) {
@@ -46,7 +48,7 @@ class Payment {
 
   // Static method to create a new payment in the database
   static async create(data) {
-    const { amount, crypto_token_id, description, wallet_id, user_id, status, expires_at, workspace } = data;
+    const { amount, crypto_token_id, description, wallet_id, user_id, status, expires_at, workspace, callback_url, cancel_url } = data;
     
     const { data: payment, error } = await supabase
       .from('payments')
@@ -58,7 +60,9 @@ class Payment {
         user_id,
         status: status || 'pending',
         expires_at,
-        workspace
+        workspace,
+        callback_url,
+        cancel_url
       }])
       .select()
       .single();
@@ -140,6 +144,7 @@ class Payment {
         currency: cryptoToken ? cryptoToken.symbol : null,
         blockchain_network: cryptoToken && cryptoToken.blockchain_network ? cryptoToken.blockchain_network : null
       };
+      console.log(enhancedPayment)
       return new Payment(enhancedPayment);
     }
     
@@ -148,9 +153,16 @@ class Payment {
 
   // Static method to update a payment
   static async update(id, updateData) {
+    // Map cancel_url to error_url for database compatibility
+    const dbUpdateData = { ...updateData, updated_at: new Date() };
+    // if (dbUpdateData.cancel_url !== undefined) {
+    //   dbUpdateData.error_url = dbUpdateData.cancel_url;
+    //   delete dbUpdateData.cancel_url;
+    // }
+    
     const { data: payment, error } = await supabase
       .from('payments')
-      .update({ ...updateData, updated_at: new Date() })
+      .update(dbUpdateData)
       .eq('id', id)
       .select()
       .single();
@@ -236,6 +248,8 @@ class Payment {
     // Now fetch related data for each payment
     const enhancedPayments = [];
     for (const payment of paymentData) {
+      
+      
       // Fetch wallet information
       let wallet = null;
       if (payment.wallet_id) {
@@ -359,6 +373,7 @@ class Payment {
     }
 
     if (payment) {
+      
       // Fetch the updated payment with crypto token info
       return await Payment.findById(payment.id);
     }

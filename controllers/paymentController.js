@@ -9,11 +9,14 @@ const createPayment = handleAsyncError(async (req, res) => {
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
-
+  
   // Use the authenticated user ID as the merchant ID if not provided in the request
   const paymentData = {
     ...value,
-    user_id: value.merchant_id || req.userId
+    user_id: value.merchant_id || req.userId,
+    // Convert empty strings to null for callback_url and cancel_url
+    callback_url: value.callback_url || null,
+    cancel_url: value.cancel_url || null
   };
 
   const payment = await paymentService.createPayment(paymentData, req.userId, req.userWorkspace);

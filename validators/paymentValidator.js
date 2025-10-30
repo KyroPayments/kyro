@@ -8,7 +8,8 @@ const createPaymentSchema = Joi.object({
   wallet_id: Joi.string().required(), // User must select their wallet
   merchant_id: Joi.string().required(),
   metadata: Joi.object(),
-  callback_url: Joi.string().uri(),
+  callback_url: Joi.string().uri().allow(null, '').optional(),
+  cancel_url: Joi.string().uri().allow(null, '').optional(),
   expires_at: Joi.date().required() // Expiration date is now required
 });
 

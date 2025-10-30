@@ -104,9 +104,65 @@ class PaymentService {
         throw new Error(`Payment cannot be confirmed. Current status: ${payment.status}`);
       }
       
-      return await Payment.confirm(id, txHash, walletAddress, payerInfo);
+      // Confirm the payment
+      const confirmedPayment = await Payment.confirm(id, txHash, walletAddress, payerInfo);
+      
+      // Send webhook notification if callback_url is provided
+      if (confirmedPayment && confirmedPayment.callback_url) {
+        this.sendWebhookNotification(confirmedPayment.callback_url, confirmedPayment);
+      }
+      
+      return confirmedPayment;
     } catch (error) {
       throw new Error(`Error confirming payment: ${error.message}`);
+    }
+  }
+  
+  // Send webhook notification to the callback URL
+  async sendWebhookNotification(callbackUrl, payment) {
+    try {
+      const axios = require('axios');
+      
+      // Prepare the payload with payment data
+      const payload = {
+        event: 'payment.confirmed',
+        payment_id: payment.id,
+        amount: payment.amount,
+        currency: payment.currency,
+        status: payment.status,
+        transaction_hash: payment.transaction_hash,
+        payment_address: payment.payment_address,
+        description: payment.description,
+        created_at: payment.created_at,
+        updated_at: payment.updated_at,
+        payer_info: {
+          firstname: payment.payer_firstname,
+          lastname: payment.payer_lastname,
+          email: payment.payer_email,
+          phone: payment.payer_phone,
+          address: payment.payer_address,
+          city: payment.payer_city,
+          state: payment.payer_state,
+          zip: payment.payer_zip,
+          country: payment.payer_country
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      // Send POST request to callback URL
+      const response = await axios.post(callbackUrl, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Kyro Payment Platform Webhook'
+        },
+        timeout: 10000 // 10 second timeout
+      });
+      
+      console.log(`Webhook notification sent to ${callbackUrl} for payment ${payment.id}, Status: ${response.status}`);
+    } catch (error) {
+      console.error(`Failed to send webhook notification to ${callbackUrl} for payment ${payment.id}:`, error.message);
+      // Note: We don't throw an error here as the payment confirmation should still succeed
+      // even if the webhook fails to send
     }
   }
 }
