@@ -23,7 +23,7 @@ const config = {
   },
   security: {
     jwtSecret: process.env.JWT_SECRET || 'kyro_jwt_secret_default',
-    encryptionKey: process.env.ENCRYPTION_KEY || 'kyro_encryption_key_default',
+    //encryptionKey: process.env.ENCRYPTION_KEY || 'kyro_encryption_key_default',
     saltRounds: parseInt(process.env.SALT_ROUNDS) || 12
   }
 };

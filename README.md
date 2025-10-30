@@ -83,14 +83,11 @@ PORT=3000
 NODE_ENV=development
 SUPPORTED_NETWORKS=ethereum,polygon,binance
 DEFAULT_NETWORK=ethereum
-KYRO_SECRET_KEY=sk_test_your_secret_key
-KYRO_PUBLIC_KEY=pk_test_your_public_key
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 LOG_LEVEL=info
 JWT_SECRET=your_jwt_secret
-ENCRYPTION_KEY=your_encryption_key
 SALT_ROUNDS=12
 ```
 
