@@ -12,6 +12,9 @@ router.get('/:id', authenticateEither, walletController.getWallet);
 // Get wallet balance
 router.get('/:id/balance', authenticateEither, walletController.getBalance);
 
+// Get wallet balance details (based on confirmed payments)
+router.get('/:id/balance-details', authenticateEither, walletController.getBalanceDetails);
+
 // Add funds to wallet
 router.post('/:id/deposit', authenticateEither, walletController.depositFunds);
 

@@ -32,6 +32,15 @@ const getBalance = handleAsyncError(async (req, res) => {
   res.status(200).json({ success: true, balance });
 });
 
+// Get wallet balance details (based on confirmed payments)
+const getBalanceDetails = handleAsyncError(async (req, res) => {
+  const balanceDetails = await walletService.getWalletBalanceDetails(req.params.id, req.userId);
+  if (!balanceDetails) {
+    return res.status(404).json({ error: 'Wallet not found or does not belong to user' });
+  }
+  res.status(200).json({ success: true, ...balanceDetails });
+});
+
 // Add funds to wallet
 const depositFunds = handleAsyncError(async (req, res) => {
   const { amount, network_type } = req.body;
@@ -66,6 +75,7 @@ module.exports = {
   createWallet,
   getWallet,
   getBalance,
+  getBalanceDetails,
   depositFunds,
   withdrawFunds,
   listWallets

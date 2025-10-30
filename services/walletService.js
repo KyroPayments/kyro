@@ -42,7 +42,7 @@ class WalletService {
   async getWalletById(id, userId) {
     try {
       const wallet = await Wallet.findById(id);
-      if (wallet && wallet.user_id !== userId) {
+      if (!wallet || wallet.user_id !== userId) {
         return null; // Wallet doesn't belong to the authenticated user
       }
       return wallet;
@@ -67,6 +67,100 @@ class WalletService {
       };
     } catch (error) {
       throw new Error(`Error retrieving wallet balance: ${error.message}`);
+    }
+  }
+
+  async getWalletBalanceDetails(id, userId) {
+    try {
+      const wallet = await this.getWalletById(id, userId);
+      if (!wallet) return null;
+      
+      // Get the user to find out their workspace
+      const { data: user, error: userError } = await require('../utils/db/client').supabase
+        .from('users')
+        .select('workspace')
+        .eq('id', userId)
+        .single();
+
+      if (userError) {
+        throw new Error(`Error retrieving user: ${userError.message}`);
+      }
+
+      const userWorkspace = user.workspace;
+
+      // Get all confirmed payments for this wallet in the user's workspace
+      const { data: payments, error: paymentError } = await require('../utils/db/client').supabase
+        .from('payments')
+        .select(`
+          id,
+          amount,
+          status,
+          crypto_token_id,
+          workspace,
+          crypto_tokens (
+            id,
+            name,
+            symbol,
+            decimals,
+            blockchain_network_id,
+            blockchain_networks (
+              id,
+              name,
+              symbol,
+              workspace
+            )
+          )
+        `)
+        .eq('wallet_id', id)
+        .eq('status', 'confirmed')
+        .eq('workspace', userWorkspace) // Only get payments from the user's workspace
+        .order('created_at', { ascending: false });
+
+      if (paymentError) {
+        throw new Error(`Error retrieving payments: ${paymentError.message}`);
+      }
+
+      // Group payments by crypto token and blockchain network to calculate balances
+      const balanceByToken = {};
+
+      for (const payment of payments) {
+        const tokenId = payment.crypto_token_id;
+        const token = payment.crypto_tokens;
+        const network = token?.blockchain_networks;
+
+        if (token) {
+          // Initialize the token entry if not exists
+          if (!balanceByToken[tokenId]) {
+            balanceByToken[tokenId] = {
+              token_id: tokenId,
+              token_name: token.name,
+              token_symbol: token.symbol,
+              decimals: token.decimals || 18,
+              network_id: network?.id,
+              network_name: network?.name,
+              network_symbol: network?.symbol,
+              total_amount: 0
+            };
+          }
+
+          // Add the payment amount to the total
+          balanceByToken[tokenId].total_amount += parseFloat(payment.amount);
+        }
+      }
+
+      // Convert the balance object to an array
+      const tokenBalances = Object.values(balanceByToken);
+
+      return {
+        wallet_id: id,
+        wallet_name: wallet.name,
+        wallet_address: wallet.address,
+        total_tokens: tokenBalances.length,
+        balances: tokenBalances,
+        updated_at: new Date()
+      };
+    } catch (error) {
+      throw new Error(`Error retrieving wallet balance details: ${error.message}`);
     }
   }
 
