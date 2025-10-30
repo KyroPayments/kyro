@@ -43,23 +43,6 @@ CREATE TABLE IF NOT EXISTS wallets (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Payments table
-CREATE TABLE IF NOT EXISTS payments (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    wallet_id UUID REFERENCES wallets(id),
-    user_id UUID REFERENCES users(id), -- Link to users table
-    amount DECIMAL(20, 8) NOT NULL,
-    crypto_token_id UUID NOT NULL REFERENCES crypto_tokens(id), -- Reference to crypto token instead of currency text
-    description TEXT, -- Description of the payment
-    status VARCHAR(20) DEFAULT 'pending',
-    payment_address VARCHAR(255),
-    transaction_hash VARCHAR(255) UNIQUE,
-    workspace VARCHAR(255) NOT NULL DEFAULT 'testnet',
-    expires_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
 -- Blockchain Networks table - networks associated with network types
 CREATE TABLE IF NOT EXISTS blockchain_networks (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -82,6 +65,32 @@ CREATE TABLE IF NOT EXISTS crypto_tokens (
     decimals INTEGER DEFAULT 18,
     contract_address VARCHAR(255), -- For tokens, null for native coins
     is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Payments table
+CREATE TABLE IF NOT EXISTS payments (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    wallet_id UUID REFERENCES wallets(id),
+    user_id UUID REFERENCES users(id), -- Link to users table
+    amount DECIMAL(20, 8) NOT NULL,
+    crypto_token_id UUID NOT NULL REFERENCES crypto_tokens(id), -- Reference to crypto token instead of currency text
+    description TEXT, -- Description of the payment
+    status VARCHAR(20) DEFAULT 'pending',
+    payment_address VARCHAR(255),
+    transaction_hash VARCHAR(255) UNIQUE,
+    payer_firstname VARCHAR(255),
+    payer_lastname VARCHAR(255),
+    payer_email VARCHAR(255),
+    payer_phone VARCHAR(255),
+    payer_address VARCHAR(255),
+    payer_city VARCHAR(255),
+    payer_state VARCHAR(255),
+    payer_zip VARCHAR(255),
+    payer_country VARCHAR(255),
+    workspace VARCHAR(255) NOT NULL DEFAULT 'testnet',
+    expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

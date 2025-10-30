@@ -91,7 +91,7 @@ class PaymentService {
     }
   }
 
-  async confirmPayment(id, txHash, walletAddress) {
+  async confirmPayment(id, txHash, walletAddress, payerInfo = null) {
     try {
       // Get the payment to verify its current status
       const payment = await Payment.findById(id);
@@ -104,7 +104,7 @@ class PaymentService {
         throw new Error(`Payment cannot be confirmed. Current status: ${payment.status}`);
       }
       
-      return await Payment.confirm(id, txHash, walletAddress);
+      return await Payment.confirm(id, txHash, walletAddress, payerInfo);
     } catch (error) {
       throw new Error(`Error confirming payment: ${error.message}`);
     }

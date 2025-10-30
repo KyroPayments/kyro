@@ -104,7 +104,11 @@ const confirmPayment = handleAsyncError(async (req, res) => {
 
 // Confirm payment (public endpoint)
 const confirmPaymentPublic = handleAsyncError(async (req, res) => {
-  const { walletAddress, txHash } = req.body;
+  const { walletAddress, txHash, 
+    firstname, lastname, email, 
+    phone, address, city, 
+    state, zip, country 
+  } = req.body;
   
   if (!walletAddress || !txHash) {
     return res.status(400).json({ error: 'Wallet address and transaction hash are required' });
@@ -266,8 +270,21 @@ const confirmPaymentPublic = handleAsyncError(async (req, res) => {
       }
     }
 
+    // Prepare payer information for storage
+    const payerInfo = {
+      firstname,
+      lastname,
+      email,
+      phone,
+      address,
+      city,
+      state,
+      zip,
+      country
+    };
+
     // All validations passed, confirm the payment
-    const confirmedPayment = await paymentService.confirmPayment(req.params.id, txHash, walletAddress);
+    const confirmedPayment = await paymentService.confirmPayment(req.params.id, txHash, walletAddress, payerInfo);
     if (!confirmedPayment) {
       return res.status(404).json({ error: 'Payment not found after confirmation' });
     }

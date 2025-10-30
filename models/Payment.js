@@ -15,6 +15,15 @@ class Payment {
     this.workspace = data.workspace;
     this.transaction_hash = data.transaction_hash;
     this.payment_address = data.payment_address;
+    this.payer_firstname = data.payer_firstname;
+    this.payer_lastname = data.payer_lastname;
+    this.payer_email = data.payer_email;
+    this.payer_phone = data.payer_phone;
+    this.payer_address = data.payer_address;
+    this.payer_city = data.payer_city;
+    this.payer_state = data.payer_state;
+    this.payer_zip = data.payer_zip;
+    this.payer_country = data.payer_country;
     
     // Add crypto token information if available
     if (data.crypto_token) {
@@ -316,10 +325,31 @@ class Payment {
   }
 
   // Static method to confirm a payment
-  static async confirm(id, txHash, fromAddress) {
+  static async confirm(id, txHash, fromAddress, payerInfo = null) {
+    // Prepare the update object with standard fields
+    const updateData = {
+      status: 'confirmed',
+      updated_at: new Date(),
+      transaction_hash: txHash,
+      payment_address: fromAddress
+    };
+    
+    // Add payer information fields if provided
+    if (payerInfo) {
+      if (payerInfo.firstname) updateData.payer_firstname = payerInfo.firstname;
+      if (payerInfo.lastname) updateData.payer_lastname = payerInfo.lastname;
+      if (payerInfo.email) updateData.payer_email = payerInfo.email;
+      if (payerInfo.phone) updateData.payer_phone = payerInfo.phone;
+      if (payerInfo.address) updateData.payer_address = payerInfo.address;
+      if (payerInfo.city) updateData.payer_city = payerInfo.city;
+      if (payerInfo.state) updateData.payer_state = payerInfo.state;
+      if (payerInfo.zip) updateData.payer_zip = payerInfo.zip;
+      if (payerInfo.country) updateData.payer_country = payerInfo.country;
+    }
+    
     const { data: payment, error } = await supabase
       .from('payments')
-      .update({ status: 'confirmed', updated_at: new Date(), transaction_hash: txHash, payment_address: fromAddress })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();

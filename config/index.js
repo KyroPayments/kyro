@@ -3,17 +3,13 @@ require('dotenv').config();
 const config = {
   port: process.env.PORT || 3000,
   environment: process.env.NODE_ENV || 'development',
-  cryptoNetworks: {
-    supported: process.env.SUPPORTED_NETWORKS?.split(',') || ['ethereum', 'polygon', 'binance'],
-    default: process.env.DEFAULT_NETWORK || 'ethereum'
-  },
   api: {
     rateLimit: {
       windowMs: 15 * 60 * 1000, // 15 minutes
       max: 100 // limit each IP to 100 requests per windowMs
     },
-    secretKey: process.env.KYRO_SECRET_KEY || 'sk_test_kyro_default_secret_key',
-    publicKey: process.env.KYRO_PUBLIC_KEY || 'pk_test_kyro_default_public_key'
+    //secretKey: process.env.KYRO_SECRET_KEY || 'sk_test_kyro_default_secret_key',
+    //publicKey: process.env.KYRO_PUBLIC_KEY || 'pk_test_kyro_default_public_key'
   },
   database: {
     supabase: {

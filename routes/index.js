@@ -39,8 +39,7 @@ router.use('/crypto-tokens', cryptoTokenRoutes);
 router.get('/', (req, res) => {
   res.status(200).json({
     message: 'Welcome to Kyro Crypto Payment API',
-    version: '0.1.0',
-    supported_networks: require('../config').cryptoNetworks.supported
+    version: '0.1.0'
   });
 });
 
