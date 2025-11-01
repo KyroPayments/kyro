@@ -1,6 +1,22 @@
 # Kyro - Crypto Payment Platform
 
-Kyro is a crypto payment platform similar to Stripe, designed to enable businesses to accept cryptocurrency payments easily and securely.
+Kyro is a crypto payment platform, designed to enable businesses to accept cryptocurrency payments easily and securely.
+
+The platform is built with the following technologies:
+
+- Node.js
+- Express.js
+- Supabase
+- Web3.js
+
+The web app repository is available [here](https://github.com/KyroPayments/kyroweb).
+
+## Features
+
+- Payment creation and processing
+- Wallet management
+- Webhook notifications
+- Security features
 
 ## Architecture Overview
 
@@ -22,9 +38,8 @@ src/
 
 1. **Payment Module** - Handles payment creation, processing, and management
 2. **Wallet Module** - Manages cryptocurrency wallets for users
-3. **Transaction Module** - Processes and tracks transactions
-4. **Webhook Module** - Handles external notifications and events
-5. **Security Module** - Provides authentication and encryption
+3. **Webhook Module** - Handles external notifications and events
+4. **Security Module** - Provides authentication and encryption
 
 ### API Endpoints
 
@@ -42,14 +57,6 @@ src/
 - `POST /api/wallets/:id/deposit` - Deposit funds
 - `POST /api/wallets/:id/withdraw` - Withdraw funds
 - `POST /api/wallets/:id/generate-address` - Generate new address
-
-#### Transactions
-- `POST /api/transactions` - Create a new transaction
-- `GET /api/transactions/:id` - Retrieve transaction by ID
-- `GET /api/transactions` - List transactions
-- `PUT /api/transactions/:id` - Update transaction
-- `GET /api/transactions/:id/status` - Get transaction status
-- `POST /api/transactions/:id/refund` - Refund transaction
 
 ## Database Configuration
 
@@ -71,7 +78,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 After setting up your Supabase project, run the following SQL scripts to create the required tables:
 
-- `supabase/tables.sql` - Creates all required tables (wallets, payments, transactions)
+- `supabase/tables.sql` - Creates all required tables (wallets, payments)
 - `supabase/policies.sql` - Sets up Row Level Security (RLS) policies
 
 ## Environment Variables
@@ -81,8 +88,6 @@ Create a `.env` file in the root directory with the following variables:
 ```env
 PORT=3000
 NODE_ENV=development
-SUPPORTED_NETWORKS=ethereum,polygon,binance
-DEFAULT_NETWORK=ethereum
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
@@ -128,8 +133,7 @@ npm test
 
 ## Future Enhancements
 
-- Integration with blockchain networks (Ethereum, Polygon, Binance Smart Chain)
-- Support for additional cryptocurrencies
+- Integration for cross-chain payments
 - Advanced fraud detection
 - Multi-sig wallet support
 - Compliance and KYC integration
