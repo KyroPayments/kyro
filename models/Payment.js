@@ -122,7 +122,7 @@ class Payment {
           if (tokenData.blockchain_network_id) {
             const { data: networkData, error: networkError } = await supabase
               .from('blockchain_networks')
-              .select('id, name, symbol')
+              .select('id, name, symbol, rpc_url, chain_id')
               .eq('id', tokenData.blockchain_network_id)
               .single();
               
